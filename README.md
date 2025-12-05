@@ -171,22 +171,128 @@ See [openapi-spec.yaml](openapi-spec.yaml) for full API documentation.
 
 ## Testing
 
-### Backend Tests
+CodeCollab has comprehensive test coverage across three layers:
+
+### 1. Backend Unit Tests (24 tests)
+
+Test the FastAPI backend in isolation using pytest:
+
 ```bash
-cd Backend
-uv run pytest tests/ -v
+# Run all backend tests
+npm run test:backend
+
+# Or directly
+cd Backend && uv run pytest tests/ -v
+
+# With coverage
+cd Backend && uv run pytest tests/ --cov=app --cov-report=html
 ```
 
-24 tests covering:
-- Session management
-- User operations
-- Code execution
-- WebSocket functionality
+**Coverage:**
+- ✅ Session management (create, get, update)
+- ✅ User operations (join, leave, typing status)
+- ✅ Code execution (Python, error handling)
+- ✅ WebSocket functionality (connections, broadcasts)
 
-### Frontend Tests
+### 2. Frontend Unit Tests
+
+Test React components and API client using Vitest:
+
 ```bash
-cd Frontend
+# Run all frontend tests
+npm run test:frontend
+
+# Or directly
+cd Frontend && npm run test
+
+# With UI
+cd Frontend && npm run test:ui
+
+# With coverage
+cd Frontend && npm run test:coverage
+```
+
+**Coverage:**
+- ✅ API client HTTP methods
+- ✅ WebSocket connection manager
+- ✅ Error handling
+- ✅ Request/response validation
+
+### 3. Integration Tests (E2E)
+
+Test the full application stack using Cypress:
+
+```bash
+# Run E2E tests (headless)
+npm run test:e2e
+
+# Open Cypress UI
+npm run test:e2e:open
+```
+
+**Test Scenarios:**
+- ✅ Session creation and joining flow
+- ✅ Real-time code collaboration
+- ✅ Code execution end-to-end
+- ✅ Multi-user scenarios
+- ✅ Error handling (invalid sessions, duplicate usernames)
+- ✅ WebSocket real-time updates
+
+**Before running E2E tests**, make sure both services are running:
+```bash
+# Terminal 1: Start both services
+npm run dev
+
+# Terminal 2: Run E2E tests
+npm run test:e2e:open
+```
+
+### Running All Tests
+
+```bash
+# Run backend + frontend unit tests
 npm run test
+
+# Run everything including E2E (requires services running)
+npm run test && npm run test:e2e
+```
+
+### Test Structure
+
+```
+CodeCollab/
+├── Backend/tests/          # Backend unit tests (pytest)
+│   ├── conftest.py         # Test fixtures
+│   ├── test_sessions.py    # Session endpoint tests
+│   ├── test_users.py       # User endpoint tests
+│   ├── test_code.py        # Code execution tests
+│   └── test_websocket.py   # WebSocket tests
+├── Frontend/src/
+│   └── services/
+│       └── api.test.ts     # API client tests (vitest)
+└── cypress/e2e/            # Integration tests (Cypress)
+    ├── session-flow.cy.ts  # Session flow E2E tests
+    ├── collaboration.cy.ts # Real-time collaboration tests
+    └── error-handling.cy.ts# Error scenario tests
+```
+
+### CI/CD Integration
+
+Tests can be integrated into CI/CD pipelines:
+
+```yaml
+# Example GitHub Actions workflow
+- name: Backend Tests
+  run: cd Backend && uv run pytest tests/ -v
+
+- name: Frontend Tests
+  run: cd Frontend && npm run test
+
+- name: E2E Tests
+  run: |
+    npm run dev &
+    sleep 10
+    npm run test:e2e
 ```
 
 ## Production Deployment
