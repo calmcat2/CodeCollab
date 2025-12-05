@@ -1,0 +1,575 @@
+openapi: 3.0.3
+info:
+  title: CodeCollab API
+  description: |
+    Real-time collaborative code editor API for technical interviews.
+    
+    This API provides endpoints for creating and managing collaborative coding sessions,
+    user management within sessions, code execution, and real-time updates.
+    
+    ## Real-time Updates
+    The API supports real-time collaboration through WebSocket connections for:
+    - Code changes
+    - User presence (join/leave)
+    - Typing indicators
+    - Language selection changes
+  version: 1.0.0
+  contact:
+    name: CodeCollab API Support
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+  - url: https://api.codecollab.example.com/api/v1
+    description: Production server
+
+tags:
+  - name: Sessions
+    description: Session management operations
+  - name: Users
+    description: User operations within sessions
+  - name: Code
+    description: Code editing and execution operations
+  - name: WebSocket
+    description: Real-time communication endpoints
+
+paths:
+  /sessions:
+    post:
+      tags:
+        - Sessions
+      summary: Create a new coding session
+      description: Creates a new collaborative coding session with default settings
+      operationId: createSession
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+              example:
+                id: "a1b2c3d4"
+                code: "// Start coding here\nconsole.log(\"Hello, World!\");\n"
+                language: "javascript"
+                users: []
+                createdAt: 1701734400000
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}:
+    get:
+      tags:
+        - Sessions
+      summary: Get session details
+      description: Retrieves the current state of a coding session
+      operationId: getSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+            example: "a1b2c3d4"
+      responses:
+        '200':
+          description: Session found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Session not found"
+
+  /sessions/{sessionId}/join:
+    post:
+      tags:
+        - Users
+      summary: Join a session
+      description: Adds a user to the session with a unique username
+      operationId: joinSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  description: Desired username for the session
+                  example: "john_doe"
+      responses:
+        '200':
+          description: Successfully joined the session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  session:
+                    $ref: '#/components/schemas/Session'
+        '400':
+          description: Invalid request (username taken or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Username is already taken"
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}/leave:
+    post:
+      tags:
+        - Users
+      summary: Leave a session
+      description: Removes a user from the session
+      operationId: leaveSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                  description: ID of the user leaving the session
+      responses:
+        '204':
+          description: Successfully left the session
+        '404':
+          description: Session or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}/code:
+    put:
+      tags:
+        - Code
+      summary: Update session code
+      description: Updates the code content in the session
+      operationId: updateCode
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - userId
+              properties:
+                code:
+                  type: string
+                  description: Updated code content
+                  example: "console.log('Hello, World!');"
+                userId:
+                  type: string
+                  format: uuid
+                  description: ID of the user making the change
+      responses:
+        '204':
+          description: Code updated successfully
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}/language:
+    put:
+      tags:
+        - Code
+      summary: Update programming language
+      description: Changes the programming language for the session
+      operationId: updateLanguage
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - language
+              properties:
+                language:
+                  type: string
+                  description: Programming language identifier
+                  enum:
+                    - javascript
+                    - typescript
+                    - python
+                    - java
+                    - cpp
+                    - go
+                    - rust
+                  example: "javascript"
+      responses:
+        '204':
+          description: Language updated successfully
+        '400':
+          description: Invalid language
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}/typing:
+    put:
+      tags:
+        - Users
+      summary: Update typing status
+      description: Updates whether a user is currently typing
+      operationId: setTypingStatus
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - isTyping
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                  description: ID of the user
+                isTyping:
+                  type: boolean
+                  description: Whether the user is currently typing
+                  example: true
+      responses:
+        '204':
+          description: Typing status updated successfully
+        '404':
+          description: Session or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}/execute:
+    post:
+      tags:
+        - Code
+      summary: Execute code
+      description: |
+        Executes the provided code in the specified language and returns the output.
+        
+        **Note:** Currently supports JavaScript and TypeScript execution in a sandboxed environment.
+        Other languages return mock output.
+      operationId: executeCode
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - language
+              properties:
+                code:
+                  type: string
+                  description: Code to execute
+                  example: "console.log('Hello, World!');"
+                language:
+                  type: string
+                  description: Programming language
+                  example: "javascript"
+      responses:
+        '200':
+          description: Code executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResult'
+              example:
+                output: "Hello, World!"
+                executionTime: 45
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions/{sessionId}/username/check:
+    get:
+      tags:
+        - Users
+      summary: Check username availability
+      description: Checks if a username is available in the session
+      operationId: checkUsername
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+        - name: username
+          in: query
+          required: true
+          description: Username to check
+          schema:
+            type: string
+            example: "john_doe"
+      responses:
+        '200':
+          description: Username availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                    description: Whether the username is available
+                    example: true
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ws/sessions/{sessionId}:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket connection for real-time updates
+      description: |
+        Establishes a WebSocket connection for real-time session updates.
+        
+        ## Events Sent to Client:
+        - `session_update`: Sent when session state changes (code, language, users)
+        - `user_joined`: Sent when a user joins the session
+        - `user_left`: Sent when a user leaves the session
+        - `code_update`: Sent when code is modified
+        - `language_update`: Sent when language changes
+        - `typing_update`: Sent when user typing status changes
+        
+        ## Events Received from Client:
+        - `subscribe`: Subscribe to session updates
+        - `unsubscribe`: Unsubscribe from session updates
+        
+        All events include the full session state in the payload.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique identifier of the session
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket connection established
+        '404':
+          description: Session not found
+        '400':
+          description: Bad request - Invalid WebSocket upgrade
+
+components:
+  schemas:
+    Session:
+      type: object
+      required:
+        - id
+        - code
+        - language
+        - users
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique session identifier (8 characters)
+          example: "a1b2c3d4"
+        code:
+          type: string
+          description: Current code content in the session
+          example: "console.log('Hello, World!');"
+        language:
+          type: string
+          description: Current programming language
+          enum:
+            - javascript
+            - typescript
+            - python
+            - java
+            - cpp
+            - go
+            - rust
+          example: "javascript"
+        users:
+          type: array
+          description: List of users currently in the session
+          items:
+            $ref: '#/components/schemas/User'
+        createdAt:
+          type: integer
+          format: int64
+          description: Unix timestamp (milliseconds) when session was created
+          example: 1701734400000
+
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - color
+        - isTyping
+        - lastActivity
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: User's display name in the session
+          minLength: 1
+          maxLength: 50
+          example: "john_doe"
+        color:
+          type: string
+          description: User's assigned color (HSL format)
+          pattern: '^hsl\(\d+,\s*\d+%,\s*\d+%\)$'
+          example: "hsl(37, 92%, 50%)"
+        isTyping:
+          type: boolean
+          description: Whether the user is currently typing
+          example: false
+        lastActivity:
+          type: integer
+          format: int64
+          description: Unix timestamp (milliseconds) of user's last activity
+          example: 1701734400000
+
+    ExecutionResult:
+      type: object
+      required:
+        - output
+        - executionTime
+      properties:
+        output:
+          type: string
+          description: Standard output from code execution
+          example: "Hello, World!"
+        error:
+          type: string
+          description: Error message if execution failed (optional)
+          example: "ReferenceError: x is not defined"
+        executionTime:
+          type: integer
+          description: Execution time in milliseconds
+          example: 45
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Session not found"
+        details:
+          type: string
+          description: Additional error details (optional)
+
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: header
+      name: X-Session-Token
+      description: |
+        Optional session-based authentication token.
+        Currently not implemented in the mock API but reserved for future use.
+
+security: []

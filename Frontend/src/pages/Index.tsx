@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/services/mockApi';
+import { api } from '@/services/api';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ const Index = () => {
 
   const handleCreateSession = async () => {
     setIsCreating(true);
-    
+
     try {
       const session = await api.createSession();
       toast({
@@ -37,7 +37,7 @@ const Index = () => {
 
   const handleJoinSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const sessionId = sessionInput.trim();
     if (!sessionId) {
       toast({
@@ -49,9 +49,9 @@ const Index = () => {
     }
 
     setIsJoining(true);
-    
+
     const session = await api.getSession(sessionId);
-    
+
     if (!session) {
       toast({
         title: 'Session not found',
@@ -91,7 +91,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 px-4">
@@ -100,20 +100,20 @@ const Index = () => {
               <Zap className="h-4 w-4" />
               Real-time collaborative coding
             </div>
-            
+
             <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
               Code Together,
               <span className="text-primary"> Interview Better</span>
             </h1>
-            
+
             <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Create a collaborative coding session in seconds. Share the link with your candidates 
+              Create a collaborative coding session in seconds. Share the link with your candidates
               and watch them code in real-time with syntax highlighting and instant execution.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onClick={handleCreateSession}
                 disabled={isCreating}
                 className="gap-2 min-w-[200px]"
@@ -158,7 +158,7 @@ const Index = () => {
             <h2 className="text-2xl font-bold text-center mb-12">
               Everything you need for technical interviews
             </h2>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {features.map((feature, index) => (
                 <div
@@ -180,7 +180,7 @@ const Index = () => {
         <section className="py-16 px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-8">How it works</h2>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="flex flex-col items-center">
                 <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
@@ -191,7 +191,7 @@ const Index = () => {
                   Click the button to create a new coding session instantly.
                 </p>
               </div>
-              
+
               <div className="flex flex-col items-center">
                 <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                   2
@@ -201,7 +201,7 @@ const Index = () => {
                   Copy the session link and share it with your candidates.
                 </p>
               </div>
-              
+
               <div className="flex flex-col items-center">
                 <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                   3

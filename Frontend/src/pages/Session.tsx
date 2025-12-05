@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '@/services/mockApi';
+import { api } from '@/services/api';
 import { Session as SessionType, User, ExecutionResult } from '@/types/session';
 import Header from '@/components/Header';
 import CodeEditor from '@/components/CodeEditor';
@@ -15,7 +15,7 @@ const Session = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [session, setSession] = useState<SessionType | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +23,7 @@ const Session = () => {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load session
@@ -35,7 +35,7 @@ const Session = () => {
       }
 
       const sessionData = await api.getSession(sessionId);
-      
+
       if (!sessionData) {
         toast({
           title: 'Session not found',
@@ -80,7 +80,7 @@ const Session = () => {
     if (!sessionId) return { success: false, error: 'Invalid session' };
 
     const result = await api.joinSession(sessionId, username);
-    
+
     if ('error' in result) {
       return { success: false, error: result.error };
     }
@@ -88,18 +88,18 @@ const Session = () => {
     setCurrentUser(result.user);
     setSession(result.session);
     setShowUsernameDialog(false);
-    
+
     toast({
       title: 'Welcome!',
       description: `You've joined the session as ${username}`,
     });
-    
+
     return { success: true };
   }, [sessionId, toast]);
 
   const handleCodeChange = useCallback((code: string) => {
     if (!sessionId || !currentUser) return;
-    
+
     api.updateCode(sessionId, code, currentUser.id);
   }, [sessionId, currentUser]);
 
@@ -110,9 +110,9 @@ const Session = () => {
 
   const handleTypingStart = useCallback(() => {
     if (!sessionId || !currentUser) return;
-    
+
     api.setTypingStatus(sessionId, currentUser.id, true);
-    
+
     // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -121,7 +121,7 @@ const Session = () => {
 
   const handleTypingEnd = useCallback(() => {
     if (!sessionId || !currentUser) return;
-    
+
     // Set a small delay before marking as not typing
     typingTimeoutRef.current = setTimeout(() => {
       api.setTypingStatus(sessionId, currentUser.id, false);
@@ -129,13 +129,22 @@ const Session = () => {
   }, [sessionId, currentUser]);
 
   const handleRunCode = useCallback(async () => {
-    if (!session) return;
-    
+    if (!session || !sessionId) return;
+
     setIsRunning(true);
-    const result = await api.executeCode(session.code, session.language);
-    setExecutionResult(result);
+    try {
+      const result = await api.executeCodeInSession(sessionId, session.code, session.language);
+      setExecutionResult(result);
+    } catch (error) {
+      console.error('Code execution error:', error);
+      setExecutionResult({
+        output: '',
+        error: error instanceof Error ? error.message : 'Execution failed',
+        executionTime: 0
+      });
+    }
     setIsRunning(false);
-  }, [session]);
+  }, [session, sessionId]);
 
   const handleClearOutput = useCallback(() => {
     setExecutionResult(null);
@@ -160,7 +169,7 @@ const Session = () => {
         onLanguageChange={handleLanguageChange}
         showControls={!!currentUser}
       />
-      
+
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col p-4 gap-4">
           <div className="flex-1 min-h-0">
@@ -172,7 +181,7 @@ const Session = () => {
               onTypingEnd={handleTypingEnd}
             />
           </div>
-          
+
           <div className="h-48">
             <OutputPanel
               result={executionResult}
