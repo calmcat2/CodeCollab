@@ -33,9 +33,13 @@ describe('API Client', () => {
 
             expect(result).toEqual(mockSession);
             expect(global.fetch).toHaveBeenCalledWith(
-                'http://localhost:8000/api/v1/sessions',
+                expect.stringContaining('http://localhost:8000/api/v1/sessions?t='),
                 expect.objectContaining({
                     method: 'POST',
+                    headers: expect.objectContaining({
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    })
                 })
             );
         });
