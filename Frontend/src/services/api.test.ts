@@ -152,57 +152,7 @@ describe('API Client', () => {
         });
     });
 
-    describe('executeCodeInSession', () => {
-        it('should execute code and return result', async () => {
-            const mockResult = {
-                output: 'Hello, World!',
-                executionTime: 45,
-            };
 
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: true,
-                status: 200,
-                json: async () => mockResult,
-            });
-
-            const result = await api.executeCodeInSession(
-                'test123',
-                'print("Hello, World!")',
-                'python'
-            );
-
-            expect(result).toEqual(mockResult);
-            expect(global.fetch).toHaveBeenCalledWith(
-                'http://localhost:8000/api/v1/sessions/test123/execute',
-                expect.objectContaining({
-                    method: 'POST',
-                })
-            );
-        });
-
-        it('should return error on execution failure', async () => {
-            const mockResult = {
-                output: '',
-                error: 'NameError: name "x" is not defined',
-                executionTime: 10,
-            };
-
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: true,
-                status: 200,
-                json: async () => mockResult,
-            });
-
-            const result = await api.executeCodeInSession(
-                'test123',
-                'print(x)',
-                'python'
-            );
-
-            expect(result.error).toBeDefined();
-            expect(result.error).toContain('NameError');
-        });
-    });
 
     describe('checkUsername', () => {
         it('should return true for available username', async () => {

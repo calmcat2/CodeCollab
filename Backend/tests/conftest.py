@@ -22,12 +22,15 @@ def override_get_db(mock_db):
     app.dependency_overrides.clear()
 
 
+from asgi_lifespan import LifespanManager
+
 @pytest_asyncio.fixture
 async def client(override_get_db):
-    """Create an async test client."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+    """Create an async test client with lifespan handling."""
+    async with LifespanManager(app) as manager:
+        transport = ASGITransport(app=manager.app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            yield ac
 
 
 @pytest_asyncio.fixture

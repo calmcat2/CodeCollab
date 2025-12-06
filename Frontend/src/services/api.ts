@@ -214,25 +214,7 @@ export const api = {
         });
     },
 
-    // Execute code
-    async executeCode(code: string, language: string): Promise<ExecutionResult> {
-        // Note: The frontend doesn't pass sessionId to executeCode in mockApi,
-        // but the backend expects it. We'll need to get it from context.
-        // For now, we'll create a wrapper that can be called with sessionId
-        throw new Error('Use executeCodeInSession instead');
-    },
 
-    // Execute code in a specific session
-    async executeCodeInSession(
-        sessionId: string,
-        code: string,
-        language: string
-    ): Promise<ExecutionResult> {
-        return apiRequest<ExecutionResult>(`/sessions/${sessionId}/execute`, {
-            method: 'POST',
-            body: JSON.stringify({ code, language }),
-        });
-    },
 
     // Subscribe to session updates via WebSocket
     subscribe(sessionId: string, callback: (session: Session) => void): () => void {
