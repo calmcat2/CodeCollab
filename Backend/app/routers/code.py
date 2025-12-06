@@ -6,9 +6,9 @@ from app.models.schemas import (
     ExecutionResult,
     ErrorResponse
 )
-from app.database.mock_db import MockDatabase, get_db
+from app.database.instance import db
 from app.services.session_service import SessionService
-from app.services.code_executor import CodeExecutor
+
 
 router = APIRouter(prefix="/sessions", tags=["Code"])
 
@@ -35,8 +35,7 @@ SUPPORTED_LANGUAGES = [
 )
 async def update_code(
     session_id: str,
-    request: UpdateCodeRequest,
-    db: MockDatabase = Depends(get_db)
+    request: UpdateCodeRequest
 ):
     """Update code in a session."""
     service = SessionService(db)
@@ -63,8 +62,7 @@ async def update_code(
 )
 async def update_language(
     session_id: str,
-    request: UpdateLanguageRequest,
-    db: MockDatabase = Depends(get_db)
+    request: UpdateLanguageRequest
 ):
     """Update language in a session."""
     if request.language not in SUPPORTED_LANGUAGES:
@@ -85,32 +83,4 @@ async def update_language(
     return None
 
 
-@router.post(
-    "/{session_id}/execute",
-    response_model=ExecutionResult,
-    responses={
-        400: {"model": ErrorResponse, "description": "Invalid request"},
-        404: {"model": ErrorResponse, "description": "Session not found"}
-    },
-    summary="Execute code",
-    description="Executes the provided code in the specified language and returns the output"
-)
-async def execute_code(
-    session_id: str,
-    request: ExecuteCodeRequest,
-    db: MockDatabase = Depends(get_db)
-) -> ExecutionResult:
-    """Execute code and return the result."""
-    # Verify session exists
-    session = await db.get_session(session_id)
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found"
-        )
-    
-    # Execute code
-    executor = CodeExecutor()
-    result = await executor.execute_code(request.code, request.language)
-    
-    return result
+

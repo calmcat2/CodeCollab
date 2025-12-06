@@ -1,0 +1,21 @@
+services:
+  # Docker Web Service
+  - type: web
+    name: codecollab
+    runtime: docker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: codecollab-db
+          property: connectionString
+      - key: PYTHONPATH
+        value: /app/backend
+    # Optional: Free Tier auto-sleeps.
+    plan: free
+
+databases:
+  # Managed PostgreSQL
+  - name: codecollab-db
+    databaseName: codecollab
+    user: codecollab
+    plan: free

@@ -1,8 +1,18 @@
 import { Session, User, ExecutionResult } from '@/types/session';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000';
+// API Configuration
+// Use ?? to allow empty string (relative path) for production/docker
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+
+// For WebSocket, if API_BASE_URL is relative (empty), construct WS URL from window.location
+let defaultWsUrl = 'ws://localhost:8000';
+if (API_BASE_URL === '') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    defaultWsUrl = `${protocol}//${window.location.host}`;
+}
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ?? defaultWsUrl;
+
 const API_PREFIX = '/api/v1';
 
 // Helper function for API requests

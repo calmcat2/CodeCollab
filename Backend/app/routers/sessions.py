@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from app.models.schemas import Session, ErrorResponse
-from app.database.mock_db import MockDatabase, get_db
+from app.database.instance import db
 from app.services.session_service import SessionService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
+async def get_db_instance():
+    return db
 
 @router.post(
     "",
@@ -13,9 +15,9 @@ router = APIRouter(prefix="/sessions", tags=["Sessions"])
     summary="Create a new coding session",
     description="Creates a new collaborative coding session with default settings"
 )
-async def create_session(db: MockDatabase = Depends(get_db)) -> Session:
+async def create_session() -> Session:
     """Create a new session."""
-    service = SessionService(db)
+    service = SessionService(db) # Use global db directly or dependency
     return await service.create_session()
 
 
@@ -29,8 +31,7 @@ async def create_session(db: MockDatabase = Depends(get_db)) -> Session:
     description="Retrieves the current state of a coding session"
 )
 async def get_session(
-    session_id: str,
-    db: MockDatabase = Depends(get_db)
+    session_id: str
 ) -> Session:
     """Get a session by ID."""
     service = SessionService(db)

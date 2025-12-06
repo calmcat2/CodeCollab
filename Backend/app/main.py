@@ -55,12 +55,12 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_db():
-    from app.database.sqlite_db import db
+    from app.database.instance import db
     await db.connect()
 
 @app.on_event("shutdown")
 async def shutdown_db():
-    from app.database.sqlite_db import db
+    from app.database.instance import db
     await db.disconnect()
 
 if __name__ == "__main__":

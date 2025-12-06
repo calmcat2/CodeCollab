@@ -311,15 +311,19 @@ Tests can be integrated into CI/CD pipelines:
 2. Deploy to static hosting (Vercel, Netlify, etc.)
 3. Update `.env.production` with production API URL
 
-## Security Notes
+## Security Architecture
+
+> [!NOTE]
+> **Code Execution Security**: 
+> Code execution has been moved entirely to the **Client-Side** using WebAssembly (Pyodide). 
+> - **Sandbox**: Python code runs in the user's browser, isolated from the backend server.
+> - **Risk**: Server-side execution risks are eliminated.
+> - **Limits**: Client CPU/Memory limits apply automatically.
 
 > [!WARNING]
-> The current code execution is NOT fully secure. For production:
-> - Use Docker containers with resource limits
-> - Implement proper sandboxing
-> - Use services like Judge0 or Piston API
-> - Add rate limiting
-> - Implement authentication
+> **Production Enhancements Needed**:
+> - **Authentication**: Currently uses stateless session joining. Production should implement OAuth/JWT.
+> - **Rate Limiting**: Add rate limiting for WebSocket connections to prevent spam.
 
 ## Contributing
 

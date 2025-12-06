@@ -7,7 +7,7 @@ from app.models.schemas import (
     UsernameAvailabilityResponse,
     ErrorResponse
 )
-from app.database.mock_db import MockDatabase, get_db
+from app.database.instance import db
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/sessions", tags=["Users"])
@@ -25,8 +25,7 @@ router = APIRouter(prefix="/sessions", tags=["Users"])
 )
 async def join_session(
     session_id: str,
-    request: JoinSessionRequest,
-    db: MockDatabase = Depends(get_db)
+    request: JoinSessionRequest
 ) -> JoinSessionResponse:
     """Join a session with a username."""
     service = UserService(db)
@@ -58,8 +57,7 @@ async def join_session(
 )
 async def leave_session(
     session_id: str,
-    request: LeaveSessionRequest,
-    db: MockDatabase = Depends(get_db)
+    request: LeaveSessionRequest
 ):
     """Leave a session."""
     service = UserService(db)
@@ -85,8 +83,7 @@ async def leave_session(
 )
 async def update_typing_status(
     session_id: str,
-    request: UpdateTypingRequest,
-    db: MockDatabase = Depends(get_db)
+    request: UpdateTypingRequest
 ):
     """Update user typing status."""
     service = UserService(db)
@@ -116,14 +113,9 @@ async def update_typing_status(
 )
 async def check_username(
     session_id: str,
-    username: str = Query(..., description="Username to check"),
-    db: MockDatabase = Depends(get_db)
+    username: str = Query(..., description="Username to check")
 ) -> UsernameAvailabilityResponse:
     """Check if a username is available."""
     service = UserService(db)
     available = await service.check_username_available(session_id, username)
-    
-    # If session doesn't exist, available will be False
-    # We could also raise 404, but returning False is more user-friendly
-    
     return UsernameAvailabilityResponse(available=available)

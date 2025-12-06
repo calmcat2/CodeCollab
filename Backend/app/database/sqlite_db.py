@@ -250,5 +250,5 @@ class SQLiteDatabase:
                 except Exception as e:
                     print(f"Error in listener: {e}")
 
-# Global instance (simulating singleton for now, though cleaner to init in lifecycle)
-db = SQLiteDatabase()
+# SQLiteDatabase class definition only
+

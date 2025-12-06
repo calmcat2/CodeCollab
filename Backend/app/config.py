@@ -18,6 +18,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:8080",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
     ]
     
     # Session Settings
@@ -28,6 +30,9 @@ class Settings(BaseSettings):
     # Code Execution Settings
     code_execution_timeout_seconds: int = 5
     max_code_length: int = 10000
+
+    # Database Settings
+    database_url: str = "sqlite:///./codecollab.db"
     
     model_config = ConfigDict(
         env_file=".env",

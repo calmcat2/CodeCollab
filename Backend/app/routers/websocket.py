@@ -1,8 +1,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from typing import Set
 import json
-from app.database.mock_db import MockDatabase, get_db
+from app.database.instance import db
 from app.models.schemas import Session
+# from app.managers.connection_manager import ConnectionManager (Removed)
 
 router = APIRouter(prefix="/ws", tags=["WebSocket"])
 
@@ -57,8 +58,7 @@ manager = ConnectionManager()
 @router.websocket("/sessions/{session_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
-    session_id: str,
-    db: MockDatabase = Depends(get_db)
+    session_id: str
 ):
     """
     WebSocket endpoint for real-time session updates.
