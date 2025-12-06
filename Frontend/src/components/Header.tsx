@@ -1,16 +1,18 @@
 import { Link } from 'react-router-dom';
-import { Code2 } from 'lucide-react';
+import { Code2, Users } from 'lucide-react';
 import ShareDialog from './ShareDialog';
 import LanguageSelector from './LanguageSelector';
+import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   sessionId?: string;
   language?: string;
   onLanguageChange?: (language: string) => void;
   showControls?: boolean;
+  onUsersClick?: () => void;
 }
 
-const Header = ({ sessionId, language, onLanguageChange, showControls = false }: HeaderProps) => {
+const Header = ({ sessionId, language, onLanguageChange, showControls = false, onUsersClick }: HeaderProps) => {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
       <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -26,6 +28,16 @@ const Header = ({ sessionId, language, onLanguageChange, showControls = false }:
             <LanguageSelector language={language} onChange={onLanguageChange} />
           )}
           <ShareDialog sessionId={sessionId} />
+
+          {onUsersClick && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onUsersClick}
+            >
+              <Users className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       )}
     </header>

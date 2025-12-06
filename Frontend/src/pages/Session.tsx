@@ -12,6 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
+import { LANGUAGE_DEFAULTS } from '@/utils/languageDefaults';
+import UserList from '@/components/UserList';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const Session = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -25,6 +28,7 @@ const Session = () => {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
 
   // Yjs State
   const [yDoc, setYDoc] = useState<Y.Doc | null>(null);
@@ -177,9 +181,24 @@ const Session = () => {
 
   const handleLanguageChange = useCallback((language: string) => {
     if (!sessionId) return;
-    setSession(prev => prev ? ({ ...prev, language }) : null);
+
+    // If the current code is empty or matches a default, update it to new default
+    const currentCode = session?.code || '';
+
+    // If code matches ANY default, or is empty, switch.
+    const isDefault = Object.values(LANGUAGE_DEFAULTS).includes(currentCode) || currentCode.trim() === '';
+
+    let newCode = session?.code;
+    if (isDefault) {
+      newCode = LANGUAGE_DEFAULTS[language] || '';
+    }
+
+    setSession(prev => prev ? ({ ...prev, language, code: newCode || prev.code }) : null);
     api.updateLanguage(sessionId, language);
-  }, [sessionId]);
+    if (newCode !== session?.code) {
+      api.updateCode(sessionId, newCode || '', currentUser?.id || '');
+    }
+  }, [sessionId, session?.code, currentUser]);
 
   const handleTypingStart = useCallback(() => {
     if (!sessionId || !currentUser) return;
@@ -251,6 +270,16 @@ const Session = () => {
     );
   }
 
+  const handleUsersClick = useCallback(() => {
+    // Check if mobile
+    if (window.innerWidth < 768) {
+      setIsMobileUsersOpen(true);
+    } else {
+      // Desktop toggle
+      setIsPanelCollapsed(!isPanelCollapsed);
+    }
+  }, [isPanelCollapsed]);
+
   return (
     <div className="h-screen flex flex-col bg-background relative">
       <Header
@@ -258,6 +287,7 @@ const Session = () => {
         language={session?.language}
         onLanguageChange={handleLanguageChange}
         showControls={!!currentUser}
+        onUsersClick={handleUsersClick}
       />
 
       {!isSynced && provider && (
@@ -291,15 +321,28 @@ const Session = () => {
           </div>
         </div>
 
-        {currentUser && session && (
-          <UserPanel
-            users={session.users}
-            currentUserId={currentUser.id}
-            isCollapsed={isPanelCollapsed}
-            onToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
-          />
+        {currentUser && session && !isPanelCollapsed && (
+          <div className="hidden md:flex h-full w-64 border-l border-border bg-card">
+            <UserPanel
+              users={session.users}
+              currentUserId={currentUser.id}
+            />
+          </div>
         )}
       </div>
+
+      <Sheet open={isMobileUsersOpen} onOpenChange={setIsMobileUsersOpen}>
+        <SheetContent side="right">
+          <SheetHeader>
+            <SheetTitle>Participants ({session?.users.length || 0})</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 h-full">
+            {currentUser && session && (
+              <UserList users={session.users} currentUserId={currentUser.id} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {currentUser && session && (
         <TypingIndicator
