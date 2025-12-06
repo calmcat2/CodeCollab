@@ -26,7 +26,7 @@ jobs:
           source .venv/bin/activate
           uv pip install -r pyproject.toml
           # Install test deps if they are separate, or ensure pyproject.toml includes them
-          uv pip install pytest pytest-asyncio httpx
+          uv pip install pytest pytest-asyncio httpx asgi-lifespan
 
       - name: Run Tests
         working-directory: ./Backend
