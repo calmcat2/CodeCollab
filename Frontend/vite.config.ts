@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         name: 'CodeCollab',
         short_name: 'CodeCollab',
         description: 'Real-time Collaborative Code Editor',
-        theme_color: '#09090b',
+        theme_color: '#ffffff',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -41,6 +41,9 @@ export default defineConfig(({ mode }) => ({
             type: 'image/png'
           }
         ]
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5MB
       }
     })
   ].filter(Boolean),

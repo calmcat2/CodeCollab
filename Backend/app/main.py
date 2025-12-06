@@ -2,11 +2,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import sessions, users, code, websocket
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    from app.database.instance import db
+    await db.connect()
+    yield
+    # Shutdown
+    await db.disconnect()
 
 # Create FastAPI application
 app = FastAPI(
     title=settings.project_name,
     version=settings.version,
+    lifespan=lifespan,
     description="""
     Real-time collaborative code editor API for technical interviews.
     
@@ -53,15 +64,7 @@ async def health_check():
 
 
 
-@app.on_event("startup")
-async def startup_db():
-    from app.database.instance import db
-    await db.connect()
 
-@app.on_event("shutdown")
-async def shutdown_db():
-    from app.database.instance import db
-    await db.disconnect()
 
 if __name__ == "__main__":
     import uvicorn
