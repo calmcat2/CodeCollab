@@ -1,7 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from typing import Set
 import json
-from app.database.instance import db
 from app.models.schemas import Session
 # from app.managers.connection_manager import ConnectionManager (Removed)
 
@@ -55,10 +54,13 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+from app.database.instance import get_db
+
 @router.websocket("/sessions/{session_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
-    session_id: str
+    session_id: str,
+    db=Depends(get_db)
 ):
     """
     WebSocket endpoint for real-time session updates.
