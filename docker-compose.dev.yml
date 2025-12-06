@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    image: python:3.12-slim
+    working_dir: /app/backend
+    volumes:
+      - ./Backend:/app/backend
+    command: sh -c "pip install uv && uv sync && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://codecollab:secret@postgres:5432/codecollab
+    depends_on:
+      - postgres
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app/frontend
+    volumes:
+      - ./Frontend:/app/frontend
+    # We need to install dependencies if node_modules doesn't exist or is empty
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:8080"
+    environment:
+      - VITE_API_BASE_URL=
+      - VITE_WS_BASE_URL=
+      - API_TARGET=http://backend:8000
+      - WS_TARGET=ws://y-websocket:1234
+    depends_on:
+      - backend
+
+  y-websocket:
+    image: node:22-alpine
+    working_dir: /app/frontend
+    volumes:
+      - ./Frontend:/app/frontend
+    command: sh -c "npm install && node node_modules/y-websocket/bin/server.js"
+    ports:
+      - "1234:1234"
+    environment:
+      - PORT=1234
+      - HOST=0.0.0.0
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=codecollab
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=codecollab
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data_dev:

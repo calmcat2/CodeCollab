@@ -2,7 +2,7 @@ import { User } from '@/types/session';
 import { Users } from 'lucide-react';
 import UserList from './UserList';
 
-const UserPanel = ({ users, currentUserId }: { users: User[], currentUserId: string }) => {
+const UserPanel = ({ users, currentUserId, onLeave, onlineUserIds }: { users: User[], currentUserId?: string, onLeave?: () => void, onlineUserIds: Set<string> }) => {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border">
@@ -15,7 +15,18 @@ const UserPanel = ({ users, currentUserId }: { users: User[], currentUserId: str
         </div>
       </div>
 
-      <UserList users={users} currentUserId={currentUserId} />
+      <UserList users={users} currentUserId={currentUserId || ''} onlineUserIds={onlineUserIds} />
+
+      {currentUserId && onLeave && (
+        <div className="p-3 border-t border-border mt-auto">
+          <button
+            onClick={onLeave}
+            className="w-full text-xs text-muted-foreground hover:text-destructive transition-colors text-center p-2 rounded-md hover:bg-muted"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
     </div>
   );
 };

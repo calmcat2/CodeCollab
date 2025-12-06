@@ -10,8 +10,14 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
+      '/api': {
+        target: process.env.API_TARGET || 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      },
       '/yjs-ws': {
-        target: 'ws://localhost:1234',
+        target: process.env.WS_TARGET || 'ws://localhost:1234',
         ws: true,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/yjs-ws/, '')

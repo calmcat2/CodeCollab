@@ -13,11 +13,12 @@ interface CodeEditorProps {
   onTypingStart: () => void;
   onTypingEnd: () => void;
   username: string;
+  userId: string;
   yDoc: Y.Doc | null;
   provider: WebsocketProvider | null;
 }
 
-const CodeEditor = ({ code: initialCode, language, onChange, onTypingStart, onTypingEnd, username, yDoc, provider }: CodeEditorProps) => {
+const CodeEditor = ({ code: initialCode, language, onChange, onTypingStart, onTypingEnd, username, userId, yDoc, provider }: CodeEditorProps) => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof monaco | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -58,7 +59,8 @@ const CodeEditor = ({ code: initialCode, language, onChange, onTypingStart, onTy
     // Awareness (Cursors)
     provider.awareness.setLocalStateField('user', {
       name: username,
-      color: userColor.current
+      color: userColor.current,
+      id: userId
     });
 
     // Bind Yjs to Monaco
@@ -96,7 +98,7 @@ const CodeEditor = ({ code: initialCode, language, onChange, onTypingStart, onTy
       provider.off('sync', initHandler);
       bindingRef.current = null;
     }
-  }, [yDoc, provider, username, initialCode, onChange]); // Re-run if doc/provider changes (should be stable)
+  }, [yDoc, provider, username, userId, initialCode, onChange]); // Re-run if doc/provider changes (should be stable)
 
   // Language update
   useEffect(() => {

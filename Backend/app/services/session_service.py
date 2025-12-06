@@ -28,7 +28,7 @@ class SessionService:
         
         session = Session(
             id=session_id,
-            code="// Start coding here\nconsole.log(\"Hello, World!\");\n",
+            code="",
             language="javascript",
             users=[],
             createdAt=int(time.time() * 1000)

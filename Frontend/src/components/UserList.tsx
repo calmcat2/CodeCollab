@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 interface UserListProps {
     users: User[];
     currentUserId: string;
+    onlineUserIds: Set<string>;
 }
 
-const UserList = ({ users, currentUserId }: UserListProps) => {
+const UserList = ({ users, currentUserId, onlineUserIds }: UserListProps) => {
     return (
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {users.map((user) => (
@@ -29,7 +30,10 @@ const UserList = ({ users, currentUserId }: UserListProps) => {
                             {user.username.charAt(0).toUpperCase()}
                         </div>
                         <Circle
-                            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 fill-green-500 text-green-500"
+                            className={cn(
+                                "absolute -bottom-0.5 -right-0.5 h-3 w-3 fill-current",
+                                onlineUserIds.has(user.id) ? "text-green-500" : "text-muted-foreground/30"
+                            )}
                         />
                     </div>
                     <div className="flex-1 min-w-0">

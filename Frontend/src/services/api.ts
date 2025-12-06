@@ -144,8 +144,12 @@ setInterval(() => {
 export const api = {
     // Create a new session
     async createSession(): Promise<Session> {
-        return apiRequest<Session>('/sessions', {
+        return apiRequest<Session>(`/sessions?t=${Date.now()}`, {
             method: 'POST',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
         });
     },
 

@@ -16,6 +16,8 @@ import { LANGUAGE_DEFAULTS } from '@/utils/languageDefaults';
 import UserList from '@/components/UserList';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
+const STORAGE_KEY_USERNAME = 'codecollab_username';
+
 const Session = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ const Session = () => {
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);
   const [connectionError, setConnectionError] = useState<string>('');
   const [isSynced, setIsSynced] = useState(false);
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -74,12 +77,29 @@ const Session = () => {
       }
     });
 
+
+    // Awareness / Online Status
+    const awareness = wsProvider.awareness;
+    const handleAwarenessChange = () => {
+      const states = awareness.getStates();
+      const onlineIds = new Set<string>();
+      states.forEach((state: any) => {
+        if (state.user && state.user.id) {
+          onlineIds.add(state.user.id);
+        }
+      });
+      setOnlineUserIds(onlineIds);
+    };
+
+    awareness.on('change', handleAwarenessChange);
+
     setYDoc(doc);
     setProvider(wsProvider);
 
     return () => {
       wsProvider.destroy();
       doc.destroy();
+      awareness.off('change', handleAwarenessChange);
     }
   }, [sessionId]);
 
@@ -91,25 +111,62 @@ const Session = () => {
         return;
       }
 
-      const sessionData = await api.getSession(sessionId);
+      try {
+        const sessionData = await api.getSession(sessionId);
 
-      if (!sessionData) {
+        if (!sessionData) {
+          toast({
+            title: 'Session not found',
+            description: 'This session does not exist or has expired.',
+            variant: 'destructive',
+          });
+          navigate('/');
+          return;
+        }
+
+        setSession(sessionData);
+        setIsLoading(false);
+        // Only show dialog if not joined yet? Actually logic was fine.
+        setShowUsernameDialog(true);
+      } catch (error) {
+        console.error("Failed to load session", error);
         toast({
-          title: 'Session not found',
-          description: 'This session does not exist or has expired.',
+          title: 'Error loading session',
+          description: 'Please reload the page.',
           variant: 'destructive',
         });
-        navigate('/');
-        return;
+        setIsLoading(false);
       }
-
-      setSession(sessionData);
-      setIsLoading(false);
-      setShowUsernameDialog(true);
     };
 
     loadSession();
   }, [sessionId, navigate, toast]);
+
+  // Auto-join if username exists in storage
+  useEffect(() => {
+    if (!sessionId || currentUser || isLoading) return;
+
+    const storedUsername = localStorage.getItem(STORAGE_KEY_USERNAME);
+    if (storedUsername) {
+      // Small delay to ensure session is loaded? 
+      // Actually loadSession sets isLoading=false. 
+      // We can trigger join immediately.
+      api.joinSession(sessionId, storedUsername).then(result => {
+        if ('error' in result) {
+          // If failed (e.g. taken), prompt user manually
+          setShowUsernameDialog(true);
+        } else {
+          setCurrentUser(result.user);
+          setSession(result.session);
+          toast({
+            title: 'Welcome back!',
+            description: `Rejoined as ${storedUsername}`,
+          });
+          setShowUsernameDialog(false);
+        }
+      });
+    }
+  }, [sessionId, currentUser, isLoading, toast]);
 
   // Subscribe to session updates
   useEffect(() => {
@@ -134,7 +191,22 @@ const Session = () => {
     };
   }, [sessionId, currentUser]);
 
-  // Cleanup on unmount
+  // Warn before leaving
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (currentUser) {
+        e.preventDefault();
+        e.returnValue = ''; // Trigger browser warning
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentUser]);
+
+  // Cleanup on unmount - REMOVED automatic leaveSession to allow "offline" status persistence
+  // Only explicitly signing out removes the user.
+  /*
   useEffect(() => {
     return () => {
       if (sessionId && currentUser) {
@@ -142,6 +214,7 @@ const Session = () => {
       }
     };
   }, [sessionId, currentUser]);
+  */
 
   const handleJoinSession = useCallback(async (username: string) => {
     if (!sessionId) return { success: false, error: 'Invalid session' };
@@ -155,6 +228,8 @@ const Session = () => {
     setCurrentUser(result.user);
     setSession(result.session);
     setShowUsernameDialog(false);
+
+    localStorage.setItem(STORAGE_KEY_USERNAME, username);
 
     toast({
       title: 'Welcome!',
@@ -182,23 +257,9 @@ const Session = () => {
   const handleLanguageChange = useCallback((language: string) => {
     if (!sessionId) return;
 
-    // If the current code is empty or matches a default, update it to new default
-    const currentCode = session?.code || '';
-
-    // If code matches ANY default, or is empty, switch.
-    const isDefault = Object.values(LANGUAGE_DEFAULTS).includes(currentCode) || currentCode.trim() === '';
-
-    let newCode = session?.code;
-    if (isDefault) {
-      newCode = LANGUAGE_DEFAULTS[language] || '';
-    }
-
-    setSession(prev => prev ? ({ ...prev, language, code: newCode || prev.code }) : null);
+    setSession(prev => prev ? ({ ...prev, language }) : null);
     api.updateLanguage(sessionId, language);
-    if (newCode !== session?.code) {
-      api.updateCode(sessionId, newCode || '', currentUser?.id || '');
-    }
-  }, [sessionId, session?.code, currentUser]);
+  }, [sessionId]);
 
   const handleTypingStart = useCallback(() => {
     if (!sessionId || !currentUser) return;
@@ -259,6 +320,16 @@ const Session = () => {
     setExecutionResult(null);
   }, []);
 
+  const handleUsersClick = useCallback(() => {
+    // Check if mobile
+    if (window.innerWidth < 768) {
+      setIsMobileUsersOpen(true);
+    } else {
+      // Desktop toggle - functional update prevents stale closures
+      setIsPanelCollapsed(prev => !prev);
+    }
+  }, []);
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -269,16 +340,6 @@ const Session = () => {
       </div>
     );
   }
-
-  const handleUsersClick = useCallback(() => {
-    // Check if mobile
-    if (window.innerWidth < 768) {
-      setIsMobileUsersOpen(true);
-    } else {
-      // Desktop toggle
-      setIsPanelCollapsed(!isPanelCollapsed);
-    }
-  }, [isPanelCollapsed]);
 
   return (
     <div className="h-screen flex flex-col bg-background relative">
@@ -297,7 +358,7 @@ const Session = () => {
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col p-4 gap-4">
+        <div className="flex-1 flex flex-col p-4 gap-4 min-w-0">
           <div className="flex-1 min-h-0">
             <CodeEditor
               code={session?.code || ''}
@@ -306,6 +367,7 @@ const Session = () => {
               onTypingStart={handleTypingStart}
               onTypingEnd={handleTypingEnd}
               username={currentUser?.username || 'Anonymous'}
+              userId={currentUser?.id || ''}
               yDoc={yDoc}
               provider={provider}
             />
@@ -321,14 +383,27 @@ const Session = () => {
           </div>
         </div>
 
-        {currentUser && session && !isPanelCollapsed && (
-          <div className="hidden md:flex h-full w-64 border-l border-border bg-card">
-            <UserPanel
-              users={session.users}
-              currentUserId={currentUser.id}
-            />
+        <div
+          className={`hidden md:flex flex-col shrink-0 min-w-0 border-r-0 bg-card transition-all duration-300 ease-in-out ${isPanelCollapsed ? 'w-0 opacity-0 overflow-hidden border-none' : 'w-64 opacity-100 border-l border-border'
+            }`}
+        >
+          <div className="w-64 h-full">
+            {session && (
+              <UserPanel
+                users={session.users}
+                currentUserId={currentUser?.id}
+                onlineUserIds={onlineUserIds}
+                onLeave={async () => {
+                  if (sessionId && currentUser) {
+                    await api.leaveSession(sessionId, currentUser.id);
+                  }
+                  localStorage.removeItem(STORAGE_KEY_USERNAME);
+                  navigate('/');
+                }}
+              />
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <Sheet open={isMobileUsersOpen} onOpenChange={setIsMobileUsersOpen}>
@@ -338,7 +413,7 @@ const Session = () => {
           </SheetHeader>
           <div className="mt-4 h-full">
             {currentUser && session && (
-              <UserList users={session.users} currentUserId={currentUser.id} />
+              <UserList users={session.users} currentUserId={currentUser.id} onlineUserIds={onlineUserIds} />
             )}
           </div>
         </SheetContent>
@@ -362,4 +437,12 @@ const Session = () => {
   );
 };
 
-export default Session;
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+const SessionWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <Session />
+  </ErrorBoundary>
+);
+
+export default SessionWithErrorBoundary;

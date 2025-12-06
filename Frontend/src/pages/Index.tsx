@@ -18,6 +18,9 @@ const Index = () => {
     setIsCreating(true);
 
     try {
+      // Clear previous identity for new session creation to ensure fresh start
+      localStorage.removeItem('codecollab_username');
+
       const session = await api.createSession();
       toast({
         title: 'Session created!',
@@ -27,7 +30,7 @@ const Index = () => {
     } catch (error) {
       toast({
         title: 'Failed to create session',
-        description: 'Please try again.',
+        description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'destructive',
       });
     } finally {
