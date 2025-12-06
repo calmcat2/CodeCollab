@@ -1,3 +1,4 @@
+import { User } from '@/types/session';
 import { Users } from 'lucide-react';
 import UserList from './UserList';
 
