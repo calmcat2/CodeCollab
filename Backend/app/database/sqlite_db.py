@@ -19,7 +19,10 @@ class SQLiteDatabase:
         
     async def connect(self):
         """Connect to the database and initialize tables."""
-        self._db = await aiosqlite.connect(self.db_path)
+        # Note: We rely on the lifespan manager or file persistence to handle connections.
+        # logic removed: if self._db: return
+            
+        self._db = await aiosqlite.connect(self.db_path, check_same_thread=False)
         self._db.row_factory = aiosqlite.Row
         await self._init_tables()
         
@@ -90,6 +93,7 @@ class SQLiteDatabase:
             if not row:
                 return None
             
+            # print(f"DEBUG: Found session {session_id}: {dict(row)}")
             session_data = dict(row)
             
         # Get users

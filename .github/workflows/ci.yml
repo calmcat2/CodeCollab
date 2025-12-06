@@ -21,18 +21,11 @@ jobs:
         
       - name: Install dependencies
         working-directory: ./Backend
-        run: |
-          uv venv
-          source .venv/bin/activate
-          uv pip install -r pyproject.toml
-          # Install test deps if they are separate, or ensure pyproject.toml includes them
-          uv pip install pytest pytest-asyncio httpx asgi-lifespan
+        run: uv sync
 
       - name: Run Tests
         working-directory: ./Backend
-        run: |
-          source .venv/bin/activate
-          pytest tests/
+        run: uv run pytest tests/
 
   # 2. Frontend Tests (Unit/Integration)
   frontend-test:

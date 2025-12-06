@@ -5,11 +5,13 @@ from app.main import app
 import json
 
 
-def test_websocket_connection(sample_session):
+def test_websocket_connection():
     """Test WebSocket connection to a session."""
-    session_id = sample_session["id"]
-    
     with TestClient(app) as client:
+        # Create session within the same client context
+        response = client.post("/api/v1/sessions")
+        session_id = response.json()["id"]
+
         with client.websocket_connect(f"/api/v1/ws/sessions/{session_id}") as websocket:
             # Should receive initial session state
             data = websocket.receive_json()
@@ -28,11 +30,13 @@ def test_websocket_nonexistent_session():
                 pass
 
 
-def test_websocket_receives_updates(sample_session, sample_user_data):
+def test_websocket_receives_updates(sample_user_data):
     """Test that WebSocket receives session updates."""
-    session_id = sample_session["id"]
-    
     with TestClient(app) as client:
+        # Create session
+        response = client.post("/api/v1/sessions")
+        session_id = response.json()["id"]
+        
         # Connect WebSocket
         with client.websocket_connect(f"/api/v1/ws/sessions/{session_id}") as websocket:
             # Receive initial state
@@ -55,7 +59,6 @@ def test_websocket_receives_updates(sample_session, sample_user_data):
 
 def test_websocket_ping_pong():
     """Test WebSocket ping/pong for keep-alive."""
-    # Create a session first
     with TestClient(app) as client:
         response = client.post("/api/v1/sessions")
         session_id = response.json()["id"]

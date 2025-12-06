@@ -7,7 +7,7 @@ from app.models.schemas import (
     UsernameAvailabilityResponse,
     ErrorResponse
 )
-from app.database.instance import db
+from app.database.instance import get_db
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/sessions", tags=["Users"])
@@ -25,7 +25,8 @@ router = APIRouter(prefix="/sessions", tags=["Users"])
 )
 async def join_session(
     session_id: str,
-    request: JoinSessionRequest
+    request: JoinSessionRequest,
+    db=Depends(get_db)
 ) -> JoinSessionResponse:
     """Join a session with a username."""
     service = UserService(db)
@@ -57,7 +58,8 @@ async def join_session(
 )
 async def leave_session(
     session_id: str,
-    request: LeaveSessionRequest
+    request: LeaveSessionRequest,
+    db=Depends(get_db)
 ):
     """Leave a session."""
     service = UserService(db)
@@ -83,7 +85,8 @@ async def leave_session(
 )
 async def update_typing_status(
     session_id: str,
-    request: UpdateTypingRequest
+    request: UpdateTypingRequest,
+    db=Depends(get_db)
 ):
     """Update user typing status."""
     service = UserService(db)
@@ -113,7 +116,8 @@ async def update_typing_status(
 )
 async def check_username(
     session_id: str,
-    username: str = Query(..., description="Username to check")
+    username: str = Query(..., description="Username to check"),
+    db=Depends(get_db)
 ) -> UsernameAvailabilityResponse:
     """Check if a username is available."""
     service = UserService(db)

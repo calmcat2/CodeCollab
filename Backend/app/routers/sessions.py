@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from app.models.schemas import Session, ErrorResponse
-from app.database.instance import db
+from app.database.instance import get_db
 from app.services.session_service import SessionService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
@@ -15,7 +15,7 @@ async def get_db_instance():
     summary="Create a new coding session",
     description="Creates a new collaborative coding session with default settings"
 )
-async def create_session() -> Session:
+async def create_session(db=Depends(get_db)) -> Session:
     """Create a new session."""
     service = SessionService(db) # Use global db directly or dependency
     return await service.create_session()
@@ -31,7 +31,8 @@ async def create_session() -> Session:
     description="Retrieves the current state of a coding session"
 )
 async def get_session(
-    session_id: str
+    session_id: str,
+    db=Depends(get_db)
 ) -> Session:
     """Get a session by ID."""
     service = SessionService(db)

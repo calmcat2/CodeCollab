@@ -6,7 +6,7 @@ from app.models.schemas import (
     ExecutionResult,
     ErrorResponse
 )
-from app.database.instance import db
+from app.database.instance import get_db
 from app.services.session_service import SessionService
 
 
@@ -35,7 +35,8 @@ SUPPORTED_LANGUAGES = [
 )
 async def update_code(
     session_id: str,
-    request: UpdateCodeRequest
+    request: UpdateCodeRequest,
+    db=Depends(get_db)
 ):
     """Update code in a session."""
     service = SessionService(db)
@@ -62,7 +63,8 @@ async def update_code(
 )
 async def update_language(
     session_id: str,
-    request: UpdateLanguageRequest
+    request: UpdateLanguageRequest,
+    db=Depends(get_db)
 ):
     """Update language in a session."""
     if request.language not in SUPPORTED_LANGUAGES:
