@@ -12,6 +12,7 @@ export interface Session {
   language: string;
   users: User[];
   createdAt: number;
+  lastModifiedBy?: string;
 }
 
 export interface ExecutionResult {

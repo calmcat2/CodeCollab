@@ -32,6 +32,7 @@ class Session(BaseModel):
     code: str = Field(..., description="Current code content in the session")
     language: str = Field(..., description="Current programming language")
     users: list[User] = Field(default_factory=list, description="List of users currently in the session")
+    lastModifiedBy: Optional[str] = Field(None, description="ID of the user who last modified the code")
     createdAt: int = Field(..., description="Unix timestamp (milliseconds) when session was created")
     
     model_config = ConfigDict(

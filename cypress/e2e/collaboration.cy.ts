@@ -12,8 +12,8 @@ describe('Real-time Collaboration', () => {
         cy.waitForWebSocket();
 
         // Start typing
-        cy.get('[class*="monaco-editor"]').click();
-        cy.focused().type('typing...');
+        cy.get('[class*="monaco-editor"] .view-lines').click();
+        cy.focused().type('typing...', { delay: 0 });
 
         // Typing indicator should appear (in a real multi-user scenario)
         // This is a simplified test - full test would need multiple browser contexts
@@ -28,8 +28,9 @@ describe('Real-time Collaboration', () => {
         cy.waitForWebSocket();
 
         // User 1 types code
-        cy.get('[class*="monaco-editor"]').click();
-        cy.focused().type('{selectall}const message = "Real-time!";');
+        cy.get('[class*="monaco-editor"] .view-lines').click();
+        cy.focused().type('{ctrl}a{backspace}');
+        cy.focused().type('const message = "Real-time!";', { delay: 0 });
 
         // In a full test, we'd verify User 2 sees this change
         // For now, we verify the code is in the session

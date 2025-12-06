@@ -48,7 +48,10 @@ class SessionService:
         })
         
         # Update code
-        return await self.db.update_session(session_id, {"code": code})
+        return await self.db.update_session(session_id, {
+            "code": code,
+            "lastModifiedBy": user_id
+        })
     
     async def update_language(self, session_id: str, language: str) -> Optional[Session]:
         """Update the programming language in a session."""

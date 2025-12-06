@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "lib": [
+            "es5",
+            "dom"
+        ],
+        "allowJs": true,
+        "moduleResolution": "node",
+        "types": [
+            "cypress",
+            "node"
+        ]
+    },
+    "include": [
+        "cypress/**/*.ts",
+        "cypress/**/*.js"
+    ]
+}

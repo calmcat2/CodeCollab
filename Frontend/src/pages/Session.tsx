@@ -10,6 +10,8 @@ import UsernameDialog from '@/components/UsernameDialog';
 import OutputPanel from '@/components/OutputPanel';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 
 const Session = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -24,7 +26,58 @@ const Session = () => {
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
+  // Yjs State
+  const [yDoc, setYDoc] = useState<Y.Doc | null>(null);
+  const [provider, setProvider] = useState<WebsocketProvider | null>(null);
+  const [connectionError, setConnectionError] = useState<string>('');
+  const [isSynced, setIsSynced] = useState(false);
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize Yjs
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const doc = new Y.Doc();
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/yjs-ws`;
+    const wsProvider = new WebsocketProvider(wsUrl, sessionId, doc);
+
+    wsProvider.on('connection-error', (event: any) => {
+      console.error("Yjs Connection Error:", event);
+      setConnectionError("Connection Failed");
+    });
+
+    wsProvider.on('connection-close', (event: any) => {
+      setConnectionError("Disconnected");
+    });
+
+    wsProvider.on('status', (event: any) => {
+      if (event.status === 'connected') {
+        setConnectionError('');
+        setIsSynced(true);
+      } else {
+        setIsSynced(false);
+      }
+    });
+
+    // Execution Result Sync
+    const executionMap = doc.getMap('execution');
+    executionMap.observe(() => {
+      const latest = executionMap.get('latest') as any;
+      if (latest) {
+        setExecutionResult(latest.result);
+      }
+    });
+
+    setYDoc(doc);
+    setProvider(wsProvider);
+
+    return () => {
+      wsProvider.destroy();
+      doc.destroy();
+    }
+  }, [sessionId]);
 
   // Load session
   useEffect(() => {
@@ -59,13 +112,23 @@ const Session = () => {
     if (!sessionId) return;
 
     const unsubscribe = api.subscribe(sessionId, (updatedSession) => {
-      setSession(updatedSession);
+      if (currentUser && updatedSession.lastModifiedBy === currentUser.id) {
+        setSession((prev) => {
+          if (!prev) return updatedSession;
+          return {
+            ...updatedSession,
+            code: prev.code
+          };
+        });
+      } else {
+        setSession(updatedSession);
+      }
     });
 
     return () => {
       unsubscribe();
     };
-  }, [sessionId]);
+  }, [sessionId, currentUser]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -97,23 +160,30 @@ const Session = () => {
     return { success: true };
   }, [sessionId, toast]);
 
+  const codeRef = useRef(session?.code || '');
+
+  // Keep codeRef in sync
+  useEffect(() => {
+    if (session?.code) {
+      codeRef.current = session.code;
+    }
+  }, [session?.code]);
+
   const handleCodeChange = useCallback((code: string) => {
     if (!sessionId || !currentUser) return;
-
+    setSession(prev => prev ? ({ ...prev, code }) : null);
     api.updateCode(sessionId, code, currentUser.id);
   }, [sessionId, currentUser]);
 
   const handleLanguageChange = useCallback((language: string) => {
     if (!sessionId) return;
+    setSession(prev => prev ? ({ ...prev, language }) : null);
     api.updateLanguage(sessionId, language);
   }, [sessionId]);
 
   const handleTypingStart = useCallback(() => {
     if (!sessionId || !currentUser) return;
-
     api.setTypingStatus(sessionId, currentUser.id, true);
-
-    // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
@@ -121,30 +191,50 @@ const Session = () => {
 
   const handleTypingEnd = useCallback(() => {
     if (!sessionId || !currentUser) return;
-
-    // Set a small delay before marking as not typing
     typingTimeoutRef.current = setTimeout(() => {
       api.setTypingStatus(sessionId, currentUser.id, false);
     }, 500);
   }, [sessionId, currentUser]);
 
   const handleRunCode = useCallback(async () => {
-    if (!session || !sessionId) return;
+    if (!session || !sessionId || !yDoc) return;
 
     setIsRunning(true);
     try {
-      const result = await api.executeCodeInSession(sessionId, session.code, session.language);
+      const { codeExecutionService } = await import('@/services/codeExecution');
+
+      const yText = yDoc.getText('monaco');
+      const codeToRun = yText.toString() || codeRef.current;
+
+      const result = await codeExecutionService.execute(codeToRun, session.language);
+
+      const payload = {
+        result: result,
+        user: currentUser?.username,
+        timestamp: Date.now()
+      };
+
+      yDoc.getMap('execution').set('latest', payload);
       setExecutionResult(result);
+
     } catch (error) {
       console.error('Code execution error:', error);
-      setExecutionResult({
+      const errorResult = {
         output: '',
         error: error instanceof Error ? error.message : 'Execution failed',
         executionTime: 0
-      });
+      };
+      setExecutionResult(errorResult);
+
+      const payload = {
+        result: errorResult,
+        user: currentUser?.username,
+        timestamp: Date.now()
+      };
+      yDoc.getMap('execution').set('latest', payload);
     }
     setIsRunning(false);
-  }, [session, sessionId]);
+  }, [session, sessionId, yDoc, currentUser]);
 
   const handleClearOutput = useCallback(() => {
     setExecutionResult(null);
@@ -162,13 +252,19 @@ const Session = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background relative">
       <Header
         sessionId={sessionId}
         language={session?.language}
         onLanguageChange={handleLanguageChange}
         showControls={!!currentUser}
       />
+
+      {!isSynced && provider && (
+        <div className="absolute top-[64px] right-0 z-50 bg-yellow-500 text-black text-xs px-2 py-1 rounded-bl shadow-md">
+          {connectionError ? `Sync Error: ${connectionError}` : 'Connecting to Room...'}
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col p-4 gap-4">
@@ -179,6 +275,9 @@ const Session = () => {
               onChange={handleCodeChange}
               onTypingStart={handleTypingStart}
               onTypingEnd={handleTypingEnd}
+              username={currentUser?.username || 'Anonymous'}
+              yDoc={yDoc}
+              provider={provider}
             />
           </div>
 

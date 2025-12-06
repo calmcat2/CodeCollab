@@ -33,15 +33,13 @@ describe('Session Flow', () => {
         cy.joinSession(sessionId, 'CodeEditor');
         cy.waitForWebSocket();
 
-        // Find and click in the editor
-        cy.get('[class*="monaco-editor"]').should('be.visible');
-        cy.get('[class*="monaco-editor"]').click();
-
-        // Type some code (Monaco editor uses special input handling)
-        cy.focused().type('{selectall}console.log("Hello from Cypress!");');
+        // Type some code (target the textarea inside Monaco) - Using click + type at component level
+        cy.get('[class*="monaco-editor"] .view-lines').click();
+        cy.focused().type('{ctrl}a{backspace}');
+        cy.focused().type('console.log("Hello from Cypress!");', { delay: 0 });
 
         // Code should be updated
-        cy.wait(500);
+        cy.wait(1000);
     });
 
     it('should execute code and see output', () => {
@@ -49,9 +47,12 @@ describe('Session Flow', () => {
         cy.waitForWebSocket();
 
         // Clear and write Python code
-        cy.get('[class*="monaco-editor"]').should('be.visible');
-        cy.get('[class*="monaco-editor"]').click();
-        cy.focused().type('{selectall}print("Hello from Python!")');
+        cy.get('[class*="monaco-editor"] .view-lines').click();
+        cy.focused().type('{ctrl}a{backspace}');
+        cy.focused().type('print("Hello from Python!")', { delay: 0 });
+
+        // Code should be updated
+        cy.wait(1000);
 
         // Change language to Python
         cy.get('button').contains(/javascript/i).click();

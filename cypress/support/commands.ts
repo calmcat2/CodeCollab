@@ -38,7 +38,7 @@ Cypress.Commands.add('joinSession', (sessionId: string, username: string) => {
 
 Cypress.Commands.add('waitForWebSocket', () => {
     // Wait for WebSocket connection to be established
-    cy.wait(1000);
+    cy.wait(3000);
 });
 
 export { };

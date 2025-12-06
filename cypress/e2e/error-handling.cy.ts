@@ -40,8 +40,12 @@ describe('Error Handling', () => {
             cy.waitForWebSocket();
 
             // Write code with error
-            cy.get('[class*="monaco-editor"]').click();
-            cy.focused().type('{selectall}print(undefined_variable)');
+            cy.get('[class*="monaco-editor"] .view-lines').click();
+            cy.focused().type('{ctrl}a{backspace}');
+            cy.focused().type('print(undefined_variable)', { delay: 0 });
+
+            // Wait for update
+            cy.wait(1000);
 
             // Change to Python
             cy.get('button').contains(/javascript/i).click();

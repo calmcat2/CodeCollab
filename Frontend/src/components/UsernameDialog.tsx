@@ -25,9 +25,9 @@ const UsernameDialog = ({ isOpen, onSubmit, sessionId }: UsernameDialogProps) =>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const trimmedUsername = username.trim();
-    
+
     if (!trimmedUsername) {
       setError('Please enter a username');
       return;
@@ -52,9 +52,9 @@ const UsernameDialog = ({ isOpen, onSubmit, sessionId }: UsernameDialogProps) =>
     setError('');
 
     const result = await onSubmit(trimmedUsername);
-    
+
     setIsLoading(false);
-    
+
     if (!result.success) {
       setError(result.error || 'Failed to join session');
     }
@@ -72,7 +72,7 @@ const UsernameDialog = ({ isOpen, onSubmit, sessionId }: UsernameDialogProps) =>
             Enter a username to join the coding session. Your username will be visible to other participants.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -93,14 +93,14 @@ const UsernameDialog = ({ isOpen, onSubmit, sessionId }: UsernameDialogProps) =>
                 <p className="text-sm text-destructive">{error}</p>
               )}
             </div>
-            
+
             <p className="text-xs text-muted-foreground">
               Session ID: <code className="bg-muted px-1 py-0.5 rounded">{sessionId}</code>
             </p>
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+            <Button type="submit" disabled={isLoading || !username.trim()} className="w-full sm:w-auto">
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
