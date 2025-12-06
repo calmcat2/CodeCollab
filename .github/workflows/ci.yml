@@ -17,7 +17,7 @@ jobs:
         uses: astral-sh/setup-uv@v2
         
       - name: Set up Python
-        run: uv python install 3.11
+        run: uv python install 3.12
         
       - name: Install dependencies
         working-directory: ./Backend
@@ -43,7 +43,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: Frontend/package-lock.json
 
@@ -82,7 +82,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Render Deploy
-        if: "${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}"
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        if: env.deploy_url != ''
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          curl -X POST "$deploy_url"
           echo "Deployment triggered!"

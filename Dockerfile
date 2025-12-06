@@ -1,5 +1,5 @@
 # Stage 1: Build Frontend
-FROM node:18-alpine as frontend-build
+FROM node:22-alpine as frontend-build
 WORKDIR /app/frontend
 COPY Frontend/package*.json ./
 # CI is faster and more reliable than install
@@ -13,7 +13,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Stage 2: Final Image
-FROM python:3.11-slim
+FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Install Node.js (for y-websocket) & Nginx
