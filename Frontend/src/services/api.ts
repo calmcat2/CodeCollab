@@ -6,11 +6,16 @@ import { Session, User, ExecutionResult } from '@/types/session';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 // For WebSocket, if API_BASE_URL is relative (empty), construct WS URL from window.location
+// If API_BASE_URL is absolute, derive WS URL from it.
 let defaultWsUrl = 'ws://localhost:8000';
+
 if (API_BASE_URL === '') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     defaultWsUrl = `${protocol}//${window.location.host}`;
+} else if (API_BASE_URL.startsWith('http')) {
+    defaultWsUrl = API_BASE_URL.replace(/^http/, 'ws');
 }
+
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ?? defaultWsUrl;
 
 const API_PREFIX = '/api/v1';

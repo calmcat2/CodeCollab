@@ -24,9 +24,12 @@ const OutputPanel = ({ result, isRunning, onRun, onClear }: OutputPanelProps) =>
               <X className="h-3 w-3" />
             </Button>
           )}
-          <Button 
-            onClick={onRun} 
-            size="sm" 
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              onRun();
+            }}
+            size="sm"
             disabled={isRunning}
             className="gap-2"
           >
@@ -44,7 +47,7 @@ const OutputPanel = ({ result, isRunning, onRun, onClear }: OutputPanelProps) =>
           </Button>
         </div>
       </div>
-      
+
       <div className="flex-1 overflow-auto p-4 font-mono text-sm">
         {result ? (
           <div className="space-y-2">

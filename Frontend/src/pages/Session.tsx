@@ -362,7 +362,7 @@ const Session = () => {
           <div className="flex-1 min-h-0">
             <CodeEditor
               code={session?.code || ''}
-              language={session?.language || 'javascript'}
+              language={session?.language || 'python'}
               onChange={handleCodeChange}
               onTypingStart={handleTypingStart}
               onTypingEnd={handleTypingEnd}

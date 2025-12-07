@@ -9,9 +9,11 @@ interface UserListProps {
 }
 
 const UserList = ({ users, currentUserId, onlineUserIds }: UserListProps) => {
+    const sortedUsers = [...users].sort((a, b) => a.username.localeCompare(b.username));
+
     return (
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {users.map((user) => (
+            {sortedUsers.map((user) => (
                 <div
                     key={user.id}
                     className={cn(
@@ -21,7 +23,7 @@ const UserList = ({ users, currentUserId, onlineUserIds }: UserListProps) => {
                 >
                     <div className="relative">
                         <div
-                            className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold"
+                            className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold select-none"
                             style={{
                                 backgroundColor: `${user.color}20`,
                                 color: user.color

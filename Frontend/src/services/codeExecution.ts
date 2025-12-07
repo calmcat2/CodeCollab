@@ -89,8 +89,10 @@ class CodeExecutionService {
 
                 try {
                     // New Function is safer than eval but still has access to global window.
-                    // For client-side playground it's acceptable.
-                    new Function(code)();
+                    // Shadow 'print' to prevent window.print() and redirect to console.log
+                    // We can also pass other globals if needed.
+                    const runner = new Function('print', code);
+                    runner((...args: any[]) => console.log(...args));
                 } finally {
                     console.log = originalLog;
                 }

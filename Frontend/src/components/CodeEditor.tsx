@@ -130,6 +130,7 @@ const CodeEditor = ({ code: initialCode, language, onChange, onTypingStart, onTy
           wordWrap: 'on',
           cursorBlinking: 'smooth',
           smoothScrolling: true,
+          accessibilitySupport: 'off',
         }}
       />
     </div>

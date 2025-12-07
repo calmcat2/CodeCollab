@@ -29,7 +29,7 @@ class SessionService:
         session = Session(
             id=session_id,
             code="",
-            language="javascript",
+            language="python",
             users=[],
             createdAt=int(time.time() * 1000)
         )

@@ -39,8 +39,8 @@ class Session(BaseModel):
         json_schema_extra={
             "example": {
                 "id": "a1b2c3d4",
-                "code": "console.log('Hello, World!');",
-                "language": "javascript",
+                "code": "print('Hello, World!')",
+                "language": "python",
                 "users": [],
                 "createdAt": 1701734400000
             }
